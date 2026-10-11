@@ -4,6 +4,7 @@ import { createContext, useContext } from 'react';
 import { useQuery, type QueryKey } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { FileSpreadsheet, FileText } from 'lucide-react';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
 const tz = 'America/Los_Angeles';
@@ -14,13 +15,18 @@ export type Range = { from: string; to: string };
 export async function adminGet<T>(resource: string, params: Record<string, string | number | undefined> = {}): Promise<T> {
   const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]));
   const res = await fetch(`/api/admin/${resource}?${qs}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? 'Request failed');
+  const data = await res.json().catch(() => ({ error: `The server didn't answer properly (error ${res.status}). Please try again in a minute.` }));
+  if (!res.ok || data.error) throw new Error(data.error ?? 'Request failed');
   return data as T;
 }
 
 export function useAdmin<T>(key: QueryKey, resource: string, params: Record<string, string | number | undefined> = {}, o: { refetchInterval?: number } = {}) {
   return useQuery({ queryKey: ['admin', ...key], queryFn: () => adminGet<T>(resource, params), refetchInterval: o.refetchInterval });
+}
+
+// Shown instead of a tab's content when its data couldn't be loaded, so a tab never just spins.
+export function LoadError({ error }: { error: Error }) {
+  return <Alert tone="error"><b>This tab couldn&apos;t load.</b> {error.message}</Alert>;
 }
 
 // Runs a server action and shows the outcome. Returns true on success.

@@ -14,7 +14,7 @@ import { Spinner, Table } from '@/components/ui/misc';
 import { PagerBar, PagerFooter, usePager } from '@/components/ui/pager';
 import { SUSPENSION_DAYS } from '@/lib/constants';
 import { money } from '@/lib/format';
-import { day, run, TableHead, useAccess, useAdmin } from './shared';
+import { day, run, TableHead, useAccess, useAdmin, LoadError } from './shared';
 
 type User = {
   id: string; email: string; username: string; role: string; status: 'active' | 'suspended' | 'banned' | 'deleted'; suspendedUntil: string | null; createdAt: string; orders: number; spentCents: number; noShowStreak: number; noShowProbation: boolean;
@@ -32,13 +32,14 @@ export function UsersPanel({ adminId }: { adminId: string }) {
   const [editFor, setEditFor] = useState<User | null>(null);
   const access = useAccess();
   const isAdmin = access.role === 'admin';
-  const { data, isLoading } = useAdmin<User[]>(['users', role, q], 'users', { role, q });
+  const { error: loadError, data, isLoading } = useAdmin<User[]>(['users', role, q], 'users', { role, q });
   const pager = usePager(data ?? [], `${role}|${q}`);
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin'] });
   const reactivate = async (u: User) => {
     if (u.status === 'banned' && !confirm(`Lift the permanent ban on ${u.username}? They will be able to log in again.`)) return;
     if (await run(() => setUserStatus({ id: u.id, status: 'active' }), `${u.username} is active again`)) refresh();
   };
+  if (loadError && !data) return <LoadError error={loadError} />;
   return (
     <>
       <div className="mb-4 flex flex-wrap gap-3">

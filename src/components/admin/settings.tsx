@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { Checkbox, Field, Input } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/misc';
-import { run, useAdmin } from './shared';
+import { run, useAdmin, LoadError } from './shared';
 
 type S = {
   settings: { serviceFeePct: number; defaultTaxRatePct: number; requireRestaurantApproval: boolean; planTaxStates: string };
@@ -17,7 +17,8 @@ type S = {
 
 export function SettingsPanel() {
   const queryClient = useQueryClient();
-  const { data } = useAdmin<S>(['settings'], 'settings');
+  const { error: loadError, data } = useAdmin<S>(['settings'], 'settings');
+  if (loadError && !data) return <LoadError error={loadError} />;
   if (!data) return <Spinner />;
   return <SettingsForm key={JSON.stringify(data.settings)} data={data} onSaved={() => queryClient.invalidateQueries({ queryKey: ['admin'] })} />;
 }

@@ -10,7 +10,7 @@ import { EmptyState, Spinner, Table } from '@/components/ui/misc';
 import { PagerBar, PagerFooter, usePager } from '@/components/ui/pager';
 import { OFFER_REASONS, offerStatus, type OfferReason } from '@/lib/constants';
 import { money } from '@/lib/format';
-import { run, useAdmin } from './shared';
+import { run, useAdmin, LoadError } from './shared';
 
 type Offer = {
   id: number; title: string; reason: OfferReason; discount_pct: number; price_cents: number; original_price_cents: number; quantity_available: number;
@@ -19,13 +19,14 @@ type Offer = {
 
 export function OffersPanel() {
   const queryClient = useQueryClient();
-  const { data, isLoading } = useAdmin<Offer[]>(['offers'], 'offers');
+  const { error: loadError, data, isLoading } = useAdmin<Offer[]>(['offers'], 'offers');
   const pager = usePager(data ?? []);
   const remove = async (o: Offer) => {
     const reason = prompt(`Remove "${o.title}" from Bite Wise? Reason (optional):`);
     if (reason === null) return;
     if (await run(() => endOffer({ id: o.id, reason }), 'Offer removed')) queryClient.invalidateQueries({ queryKey: ['admin'] });
   };
+  if (loadError && !data) return <LoadError error={loadError} />;
   if (isLoading) return <div className="grid place-items-center py-10"><Spinner /></div>;
   if (!data?.length) return <EmptyState title="No live offers right now" />;
   return (

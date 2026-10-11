@@ -13,7 +13,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Checkbox, Field, Input } from '@/components/ui/field';
 import { Spinner, Table } from '@/components/ui/misc';
 import { cn } from '@/lib/utils';
-import { day, useAccess, useAdmin } from './shared';
+import { day, useAccess, useAdmin, LoadError } from './shared';
 
 type Member = { id: string; email: string; username: string; role: 'admin' | 'support'; canRefund: boolean; status: string; createdAt: string; lastSignInAt: string | null };
 
@@ -22,7 +22,7 @@ type Member = { id: string; email: string; username: string; role: 'admin' | 'su
 export function TeamPanel() {
   const me = useAccess();
   const queryClient = useQueryClient();
-  const { data, isLoading } = useAdmin<Member[]>(['team'], 'team');
+  const { error: loadError, data, isLoading } = useAdmin<Member[]>(['team'], 'team');
   const [adding, setAdding] = useState(false);
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin'] });
   const change = async (m: Member, patch: Partial<Pick<Member, 'role' | 'canRefund'>>) => {
@@ -41,6 +41,7 @@ export function TeamPanel() {
     refresh();
   };
 
+  if (loadError && !data) return <LoadError error={loadError} />;
   return (
     <Card>
       <div className="mb-3 flex flex-wrap items-center gap-3">

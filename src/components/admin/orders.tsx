@@ -16,7 +16,7 @@ import { ORDER_STATUS_LABELS, type OrderStatus } from '@/lib/constants';
 import { fmtDateTime, money } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { AdminOrder } from '@/lib/admin';
-import { adminGet, RangePicker, run, TableHead, useAccess, useAdmin, type Range } from './shared';
+import { adminGet, RangePicker, run, TableHead, useAccess, useAdmin, type Range, LoadError } from './shared';
 
 export function OrdersPanel({ range, setRange }: { range: Range; setRange: (r: Range) => void }) {
   const queryClient = useQueryClient();
@@ -24,13 +24,14 @@ export function OrdersPanel({ range, setRange }: { range: Range; setRange: (r: R
   const [q, setQ] = useState('');
   const [refunding, setRefunding] = useState<AdminOrder | null>(null);
   const { canRefund } = useAccess();
-  const { data, isLoading } = useAdmin<{ orders: AdminOrder[] }>(['orders', range, status, q], 'orders', { ...range, status, q });
+  const { error: loadError, data, isLoading } = useAdmin<{ orders: AdminOrder[] }>(['orders', range, status, q], 'orders', { ...range, status, q });
   const pager = usePager(data?.orders ?? [], `${range.from}|${range.to}|${status}|${q}`);
   const cancel = async (o: AdminOrder) => {
     const reason = prompt(`Cancel order #${o.id}? The customer's card hold is released. Reason (optional):`);
     if (reason === null) return;
     if (await run(() => adminCancelOrder({ id: o.id, reason }), `Order #${o.id} cancelled`)) queryClient.invalidateQueries({ queryKey: ['admin'] });
   };
+  if (loadError && !data) return <LoadError error={loadError} />;
   return (
     <>
       <RangePicker range={range} onChange={setRange} />

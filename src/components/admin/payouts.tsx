@@ -13,7 +13,7 @@ import { Field, Input } from '@/components/ui/field';
 import { Spinner, Table } from '@/components/ui/misc';
 import { PagerBar, PagerFooter, usePager } from '@/components/ui/pager';
 import { fmtDateTime, money } from '@/lib/format';
-import { day, DownloadIcons, exportHref, TableHead, useAdmin } from './shared';
+import { day, DownloadIcons, exportHref, TableHead, useAdmin, LoadError } from './shared';
 
 type Balance = {
   restaurantId: number; name: string; city: string; status: string; email: string; orders: number; earnedCents: number; paidCents: number;
@@ -24,10 +24,11 @@ type History = { id: number; paid_at: string; invoice_number: string | null; kin
 export function PayoutsPanel() {
   const queryClient = useQueryClient();
   const [paying, setPaying] = useState<Balance | null>(null);
-  const { data, isLoading } = useAdmin<{ balances: Balance[]; history: History[]; paymentMode: 'stripe' | 'mock' }>(['payouts'], 'payouts');
+  const { error: loadError, data, isLoading } = useAdmin<{ balances: Balance[]; history: History[]; paymentMode: 'stripe' | 'mock' }>(['payouts'], 'payouts');
   const balances = usePager(data?.balances ?? []);
   const history = usePager(data?.history ?? []);
 
+  if (loadError && !data) return <LoadError error={loadError} />;
   if (isLoading || !data) return <div className="grid place-items-center py-10"><Spinner /></div>;
   const owed = data.balances.reduce((n, b) => n + Math.max(0, b.balanceCents), 0);
   return (

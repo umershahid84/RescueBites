@@ -18,7 +18,7 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { StateSelect } from '@/components/ui/state-select';
 import { SUSPENSION_DAYS } from '@/lib/constants';
 import { money, pct } from '@/lib/format';
-import { day, run, TableHead, useAccess, useAdmin } from './shared';
+import { day, run, TableHead, useAccess, useAdmin, LoadError } from './shared';
 import { DaysPicker } from './users';
 
 type Plan = { plan: 'founding' | 'monthly' | 'annual'; status: 'active' | 'past_due' | 'expired'; foundingNumber: number | null; autoRenew: boolean; periodEnd: string | null };
@@ -61,7 +61,7 @@ export function RestaurantsPanel() {
   const [editFor, setEditFor] = useState<Row | null>(null);
   const [menuFor, setMenuFor] = useState<Row | null>(null);
   const isAdmin = useAccess().role === 'admin';
-  const { data, isLoading } = useAdmin<Row[]>(['restaurants', status, q], 'restaurants', { status, q });
+  const { error: loadError, data, isLoading } = useAdmin<Row[]>(['restaurants', status, q], 'restaurants', { status, q });
   const pager = usePager(data ?? [], `${status}|${q}`);
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin'] });
   const approve = async (r: Row) => {
@@ -82,6 +82,7 @@ export function RestaurantsPanel() {
   const reconfirm = async (r: Row) => {
     if (await run(() => resendConfirmation({ login: r.ownerEmail }), `Confirmation email sent again to ${r.ownerEmail}.`)) refresh();
   };
+  if (loadError && !data) return <LoadError error={loadError} />;
   return (
     <>
       <div className="mb-4 flex flex-wrap gap-3">

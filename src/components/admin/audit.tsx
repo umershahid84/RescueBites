@@ -4,13 +4,14 @@ import { Card } from '@/components/ui/card';
 import { Spinner, Table } from '@/components/ui/misc';
 import { PagerBar, PagerFooter, usePager } from '@/components/ui/pager';
 import { fmtDateTime } from '@/lib/format';
-import { TableHead, useAdmin } from './shared';
+import { TableHead, useAdmin, LoadError } from './shared';
 
 type Entry = { id: number; action: string; target_type: string; target_id: string | null; details: string; created_at: string; profiles: { username: string } | null };
 
 export function AuditPanel() {
-  const { data, isLoading } = useAdmin<Entry[]>(['audit'], 'audit');
+  const { error: loadError, data, isLoading } = useAdmin<Entry[]>(['audit'], 'audit');
   const pager = usePager(data ?? []);
+  if (loadError && !data) return <LoadError error={loadError} />;
   if (isLoading) return <Spinner />;
   return (
     <Card className="p-2">

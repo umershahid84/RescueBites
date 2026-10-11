@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState, Spinner, Table } from '@/components/ui/misc';
 import { PagerBar, PagerFooter, usePager } from '@/components/ui/pager';
-import { day, run, useAdmin } from './shared';
+import { day, run, useAdmin, LoadError } from './shared';
 
 export type AlertsData = {
   unread: number;
@@ -36,11 +36,12 @@ export function useUnreadAlerts() {
 export function AlertsPanel({ go }: { go: (tab: string) => void }) {
   const queryClient = useQueryClient();
   const [all, setAll] = useState(false);
-  const { data, isLoading } = useAdmin<AlertsData>(['alerts', all], 'alerts', { all: all ? 1 : undefined });
+  const { error: loadError, data, isLoading } = useAdmin<AlertsData>(['alerts', all], 'alerts', { all: all ? 1 : undefined });
   const pager = usePager(data?.alerts ?? [], String(all));
   const read = async (id?: number) => {
     if (await run(() => markAlertsRead({ id }))) queryClient.invalidateQueries({ queryKey: ['admin', 'alerts'] });
   };
+  if (loadError && !data) return <LoadError error={loadError} />;
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center gap-3">

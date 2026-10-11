@@ -7,7 +7,7 @@ import { Kpi, Spinner, Table } from '@/components/ui/misc';
 import { PagerBar, PagerFooter, usePager } from '@/components/ui/pager';
 import { money } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { DownloadIcons, RangePicker, daysAgo, todayPT, useAdmin, type Range } from './shared';
+import { DownloadIcons, RangePicker, daysAgo, todayPT, useAdmin, type Range, LoadError } from './shared';
 
 type Line = {
   orders: number; meals: number; gmvCents: number; serviceFeesCents: number; planFeesCents: number; planInvoices: number; pioneerDiscountsCents: number;
@@ -34,7 +34,7 @@ export function IncomePanel() {
   const today = todayPT();
   const [range, setRange] = useState<Range>({ from: daysAgo(29), to: today });
   const [by, setBy] = useState<By>('day');
-  const { data, isLoading } = useAdmin<Income>(['income', range, by], 'income', { ...range, by });
+  const { error: loadError, data, isLoading } = useAdmin<Income>(['income', range, by], 'income', { ...range, by });
   // Newest period first, 25 a page.
   const key = `${range.from}|${range.to}|${by}`;
   const periods = usePager(useMemo(() => [...(data?.periods ?? [])].reverse(), [data]), key);
@@ -48,6 +48,7 @@ export function IncomePanel() {
     ['Last year', { from: `${Number(year) - 1}-01-01`, to: `${Number(year) - 1}-12-31` }, 'month'],
     ['Since launch', { from: '2026-01-01', to: today }, 'year'],
   ];
+  if (loadError && !data) return <LoadError error={loadError} />;
   return (
     <>
       {data && (

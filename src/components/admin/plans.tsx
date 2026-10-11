@@ -16,7 +16,7 @@ import { Kpi, Spinner, Table } from '@/components/ui/misc';
 import { PagerBar, PagerFooter, usePager } from '@/components/ui/pager';
 import { money } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { day, run, useAdmin } from './shared';
+import { day, run, useAdmin, LoadError } from './shared';
 
 type Row = {
   restaurantId: number; name: string; city: string; restaurantStatus: string; ownerEmail: string;
@@ -60,12 +60,13 @@ function PlanCell({ r }: { r: Row }) {
 // restaurant's plan, with delinquent ones first.
 export function PlansPanel() {
   const queryClient = useQueryClient();
-  const { data } = useAdmin<Data>(['plans'], 'plans');
+  const { error: loadError, data } = useAdmin<Data>(['plans'], 'plans');
   const [filter, setFilter] = useState<keyof typeof FILTERS>('all');
   const rows = (data?.rows ?? []).filter((r) =>
     filter === 'all' ? true : filter === 'none' ? !r.plan : filter === 'past_due' || filter === 'expired' ? r.status === filter
       : filter === 'founding' ? pioneer(r) : r.plan === filter && r.status === 'active' && !pioneer(r));
   const pager = usePager(rows, filter);
+  if (loadError && !data) return <LoadError error={loadError} />;
   if (!data) return <Spinner />;
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin'] });
   const s = data.summary;

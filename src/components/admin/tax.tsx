@@ -3,7 +3,7 @@
 import { Card } from '@/components/ui/card';
 import { Kpi, Spinner, Table } from '@/components/ui/misc';
 import { money, pct } from '@/lib/format';
-import { DownloadIcons, exportHref, RangePicker, TableHead, useAdmin, type Range } from './shared';
+import { DownloadIcons, exportHref, RangePicker, TableHead, useAdmin, type Range, LoadError } from './shared';
 
 type Totals = { taxableCents: number; taxCents: number };
 type Tax = {
@@ -13,7 +13,8 @@ type Tax = {
 };
 
 export function TaxPanel({ range, setRange }: { range: Range; setRange: (r: Range) => void }) {
-  const { data, isLoading } = useAdmin<Tax>(['tax', range], 'tax', range);
+  const { error: loadError, data, isLoading } = useAdmin<Tax>(['tax', range], 'tax', range);
+  if (loadError && !data) return <LoadError error={loadError} />;
   return (
     <>
       <div className="flex flex-wrap items-start"><RangePicker range={range} onChange={setRange} /><span className="flex-1" />
